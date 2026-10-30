@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2026 월드컵 영토 점령전 - 국기 & 수도 퀴즈</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- QRCode.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Google Fonts Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.90);
+      backdrop-filter: blur(12px);
+    }
+    .glass-btn {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .glass-btn:active {
+      transform: scale(0.97);
+    }
+    /* Blur effect mode */
+    .flag-blur {
+      filter: blur(14px) brightness(0.8);
+      transition: filter 0.4s ease;
+    }
+    .flag-clear {
+      filter: blur(0px) brightness(1);
+    }
+    /* Map Pin Animations */
+    .pin-pulse {
+      animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.9; }
+      50% { transform: scale(1.18); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.9; }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-indigo-500 selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="w-full bg-slate-900/90 border-b border-slate-800 px-4 py-3 sticky top-0 z-30 flex items-center justify-between shadow-lg backdrop-blur-md">
+    <div class="flex items-center gap-2.5 cursor-pointer" id="btnHeaderHome">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-md font-extrabold text-lg">
+        ⚽
+      </div>
+      <div>
+        <h1 class="font-extrabold text-sm sm:text-base leading-none text-white">2026 월드컵 정복전</h1>
+        <p class="text-[10px] sm:text-xs text-indigo-400 font-semibold mt-0.5">국기 & 수도 세계 지도 퀴즈</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <!-- HUD SCORES -->
+      <div id="hudScoreGroup" class="hidden flex items-center gap-3 bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700/60 text-xs font-bold shadow-inner">
+        <div class="text-emerald-400 flex items-center gap-1">
+          <i class="fa-solid fa-flag"></i> <span id="hudScore">0</span>점
+        </div>
+        <div class="text-rose-400 flex items-center gap-1">
+          <i class="fa-solid fa-heart"></i> <span id="hudLives">❤️❤️❤️</span>
+        </div>
+        <div id="hudTimerContainer" class="hidden text-amber-400 flex items-center gap-1">
+          <i class="fa-solid fa-stopwatch"></i> <span id="hudTimer">60</span>초
+        </div>
+      </div>
+
+      <!-- QR BUTTON -->
+      <button id="btnOpenQRHeader" class="glass-btn px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 flex items-center gap-1.5 hover:bg-slate-800 transition shadow-sm">
+        <i class="fa-solid fa-qrcode text-indigo-400"></i>
+        <span class="hidden sm:inline">QR 공유</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 w-full max-w-5xl mx-auto p-3 sm:p-5 flex flex-col items-center justify-center relative">
+
+    <!-- START & CONFIG PANEL -->
+    <div id="startPanel" class="w-full max-w-xl glass-card rounded-3xl p-5 sm:p-8 border border-slate-800 shadow-2xl flex flex-col gap-5 my-auto">
+      <div class="text-center flex flex-col items-center gap-2">
+        <span class="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-extrabold rounded-full">2026 월드컵 본선 48개국</span>
+        <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">국기 & 수도 퀴즈 정복전</h2>
+        <p class="text-xs sm:text-sm text-slate-400">퀴즈 유형과 출제 방식을 선택한 후 게임을 시작하세요</p>
+      </div>
+
+      <!-- 1. QUIZ TYPE TOGGLE (Flag vs Capital) -->
+      <div class="bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 flex gap-1 shadow-inner">
+        <button id="btnSelectTypeFlag" class="flex-1 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md">
+          <i class="fa-solid fa-flag"></i> 국기 맞추기
+        </button>
+        <button id="btnSelectTypeCapital" class="flex-1 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 text-slate-400 hover:text-white">
+          <i class="fa-solid fa-city"></i> 수도 맞추기
+        </button>
+      </div>
+
+      <!-- 2. QUIZ MODE SELECT (Map vs 4-Choice vs Text Input vs Speed) -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <button id="btnModeMap" class="glass-btn p-3.5 rounded-2xl text-left border border-indigo-500/50 bg-indigo-950/40 flex flex-col gap-1 transition shadow-sm">
+          <span class="text-xs text-indigo-400 font-extrabold">모드 01</span>
+          <span class="font-bold text-sm text-white"><i class="fa-solid fa-map-location-dot"></i> 지도 정복 모드</span>
+          <span class="text-[11px] text-slate-400">세계지도 영토 핀 선택</span>
+        </button>
+
+        <button id="btnMode4Choice" class="glass-btn p-3.5 rounded-2xl text-left border border-slate-800 flex flex-col gap-1 transition hover:border-slate-700">
+          <span class="text-xs text-slate-400 font-extrabold">모드 02</span>
+          <span class="font-bold text-sm text-white"><i class="fa-solid fa-list-check"></i> 랜덤 4지선다</span>
+          <span class="text-[11px] text-slate-400">무작위 4지선다 문제</span>
+        </button>
+
+        <button id="btnModeTextInput" class="glass-btn p-3.5 rounded-2xl text-left border border-slate-800 flex flex-col gap-1 transition hover:border-slate-700">
+          <span class="text-xs text-slate-400 font-extrabold">모드 03</span>
+          <span class="font-bold text-sm text-white"><i class="fa-solid fa-keyboard"></i> 주관식 직접 입력</span>
+          <span class="text-[11px] text-slate-400">정답 직접 타이핑</span>
+        </button>
+
+        <button id="btnModeSpeed" class="glass-btn p-3.5 rounded-2xl text-left border border-slate-800 flex flex-col gap-1 transition hover:border-slate-700">
+          <span class="text-xs text-slate-400 font-extrabold">모드 04</span>
+          <span class="font-bold text-sm text-white"><i class="fa-solid fa-bolt text-amber-400"></i> 스피드 60초</span>
+          <span class="text-[11px] text-slate-400">제한시간 내 최고득점</span>
+        </button>
+      </div>
+
+      <!-- 3. ADDITIONAL TOGGLES (Blur Effect) -->
+      <div id="blurToggleBox" class="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <i class="fa-solid fa-eye-low-vision text-indigo-400 text-lg"></i>
+          <div>
+            <span class="font-bold text-xs sm:text-sm text-slate-200 block">국기 블러(Blur) 가림 효과</span>
+            <span class="text-[11px] text-slate-400">국기를 흐리게 보여주어 난이도 상승</span>
+          </div>
+        </div>
+        <input type="checkbox" id="chkBlurEffect" class="w-5 h-5 accent-indigo-600 rounded cursor-pointer" />
+      </div>
+
+      <!-- START GAME BUTTON -->
+      <button id="btnStartGame" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold py-4 rounded-2xl shadow-xl shadow-indigo-600/30 text-base transition transform active:scale-95 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-play"></i>
+        <span>게임 시작하기</span>
+      </button>
+
+      <div class="flex items-center justify-center gap-4 pt-1 text-xs">
+        <button id="btnOpenQRMain" class="text-slate-400 hover:text-white flex items-center gap-1.5 underline underline-offset-4">
+          <i class="fa-solid fa-qrcode text-indigo-400"></i> QR 공유
+        </button>
+        <span class="text-slate-600">•</span>
+        <button id="btnOpenDeployModal" class="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1.5 underline underline-offset-4">
+          <i class="fa-solid fa-globe"></i> 10초 만에 실제 웹사이트 만들기
+        </button>
+      </div>
+    </div>
+
+    <!-- MAP VIEW CONTAINER -->
+    <div id="mapViewContainer" class="hidden w-full flex flex-col items-center gap-3">
+      <div class="w-full flex items-center justify-between bg-slate-900/90 px-4 py-2.5 rounded-2xl border border-slate-800 text-xs shadow-md">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block shadow-sm"></span>
+          <span class="text-slate-300 font-bold">점령 영토: <span id="mapConqueredCount" class="text-emerald-400 text-sm">0</span> / 48</span>
+        </div>
+        <span class="text-slate-400 font-medium">지도의 **핀 번호**를 눌러 정복 퀴즈에 도전하세요</span>
+      </div>
+
+      <!-- Pacific-Centered Map SVG -->
+      <div class="w-full bg-slate-900 border border-slate-800 rounded-3xl p-2 sm:p-4 shadow-2xl relative overflow-hidden">
+        <svg id="svgMap" viewBox="0 0 1000 500" class="w-full h-auto drop-shadow-md">
+          <!-- Ocean Background Grid -->
+          <rect width="1000" height="500" fill="#0b1329" rx="16" />
+          <path d="M 0 100 H 1000 M 0 200 H 1000 M 0 300 H 1000 M 0 400 H 1000" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="4" />
+          <path d="M 200 0 V 500 M 400 0 V 500 M 600 0 V 500 M 800 0 V 500" stroke="#1e293b" stroke-width="0.5" stroke-dasharray="4" />
+
+          <!-- Simplified World Continents (Pacific Centered) -->
+          <g fill="#1e293b" stroke="#334155" stroke-width="1.5">
+            <!-- Asia & Korea (Center) -->
+            <path d="M 220 80 Q 300 60 380 90 T 450 180 T 380 260 T 260 220 Z" />
+            <path d="M 330 150 Q 345 145 350 160 T 340 175 Z" fill="#312e81" stroke="#6366f1" stroke-width="2" />
+            <!-- Europe & Africa -->
+            <path d="M 80 80 Q 150 70 190 120 T 120 220 T 60 140 Z" />
+            <path d="M 90 230 Q 180 220 180 340 T 110 420 T 70 300 Z" />
+            <!-- Oceania -->
+            <path d="M 360 320 Q 420 310 440 370 T 350 420 Z" />
+            <!-- Americas (Right Side) -->
+            <path d="M 680 60 Q 820 50 880 120 T 800 240 T 720 160 Z" />
+            <path d="M 780 260 Q 880 280 850 420 T 760 450 T 740 320 Z" />
+          </g>
+
+          <!-- DYNAMIC MAP PINS GENERATED BY JS -->
+          <g id="svgPinsGroup"></g>
+        </svg>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- QUIZ MODAL (FULL VISIBILITY COMPACT LAYOUT) -->
+  <div id="quizModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="glass-card w-full max-w-lg h-[92vh] max-h-[640px] rounded-3xl p-4 sm:p-6 flex flex-col justify-between border border-indigo-500/30 shadow-2xl relative">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between shrink-0 pb-2 border-b border-slate-800">
+        <div class="flex items-center gap-2">
+          <span id="modalContinentBadge" class="px-2.5 py-0.5 bg-indigo-500/20 text-indigo-300 text-[11px] font-extrabold rounded-full border border-indigo-500/30">아시아</span>
+          <span id="modalTitle" class="font-extrabold text-sm text-white">대한민국 정복 퀴즈</span>
+        </div>
+        <button id="btnCloseModal" class="text-slate-400 hover:text-white w-8 h-8 rounded-xl glass-btn flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- MAIN QUIZ DISPLAY AREA (FLUID FIT) -->
+      <div class="flex-1 my-2 flex flex-col items-center justify-center gap-3 overflow-hidden">
+        
+        <!-- FLAG IMAGE BOX -->
+        <div id="flagContainer" class="w-full flex-1 max-h-40 sm:max-h-48 bg-slate-900/90 rounded-2xl p-3 border border-slate-800 flex items-center justify-center relative overflow-hidden shadow-inner">
+          <img id="flagImage" src="" alt="Flag" class="max-h-full max-w-full object-contain rounded-lg shadow-md transition-all duration-300" />
+        </div>
+
+        <!-- CAPITAL / NATION TEXT QUESTION -->
+        <div id="questionBox" class="text-center">
+          <h3 id="questionText" class="text-base sm:text-lg font-black text-white leading-tight">이 국기의 국가 이름은 무엇일까요?</h3>
+          <p id="questionSubText" class="text-xs text-indigo-400 font-semibold mt-1">수도를 맞춰주세요!</p>
+        </div>
+      </div>
+
+      <!-- BOTTOM CONTROL & OPTIONS AREA (FIXED BOTTOM) -->
+      <div class="shrink-0 flex flex-col gap-2 pt-2 border-t border-slate-800/80">
+        
+        <!-- HINT BUTTONS -->
+        <div class="flex items-center justify-between gap-2">
+          <button id="btnHint5050" class="flex-1 glass-btn py-1.5 px-3 rounded-xl text-[11px] font-bold text-amber-300 hover:bg-slate-800 flex items-center justify-center gap-1 transition">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> 50:50 힌트
+          </button>
+          <button id="btnHintText" class="flex-1 glass-btn py-1.5 px-3 rounded-xl text-[11px] font-bold text-indigo-300 hover:bg-slate-800 flex items-center justify-center gap-1 transition">
+            <i class="fa-solid fa-lightbulb"></i> 상세 힌트
+          </button>
+        </div>
+
+        <!-- 4-CHOICE BUTTONS CONTAINER -->
+        <div id="optionsContainer" class="grid grid-cols-2 gap-2">
+          <button class="option-btn glass-btn py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold text-slate-100 border border-slate-700/60 hover:border-indigo-500 text-left truncate transition">1. 보기 A</button>
+          <button class="option-btn glass-btn py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold text-slate-100 border border-slate-700/60 hover:border-indigo-500 text-left truncate transition">2. 보기 B</button>
+          <button class="option-btn glass-btn py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold text-slate-100 border border-slate-700/60 hover:border-indigo-500 text-left truncate transition">3. 보기 C</button>
+          <button class="option-btn glass-btn py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold text-slate-100 border border-slate-700/60 hover:border-indigo-500 text-left truncate transition">4. 보기 D</button>
+        </div>
+
+        <!-- DIRECT TEXT INPUT CONTAINER -->
+        <div id="directInputContainer" class="hidden flex gap-2">
+          <input type="text" id="directTextInput" placeholder="정답을 입력하세요 (예: 서울 / 대한민국)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-bold text-white focus:outline-none focus:border-indigo-500 shadow-inner" />
+          <button id="btnSubmitDirectInput" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm shrink-0 transition">제출</button>
+        </div>
+
+        <!-- RESULT FEEDBACK & NEXT BUTTON -->
+        <div id="feedbackContainer" class="hidden flex items-center justify-between bg-slate-900 p-2.5 rounded-xl border border-slate-800 shadow-sm">
+          <span id="feedbackText" class="font-extrabold text-xs sm:text-sm">정답입니다! 🎉</span>
+          <button id="btnNextQuestion" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1">다음 문제 <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- QR CODE SHARE MODAL -->
+  <div id="qrModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-md rounded-3xl p-5 sm:p-6 flex flex-col items-center gap-4 text-center border border-indigo-500/30 shadow-2xl relative">
+      <button id="btnCloseQRModal" class="absolute top-4 right-4 text-slate-400 hover:text-white w-8 h-8 rounded-lg glass-btn flex items-center justify-center transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="w-12 h-12 rounded-2xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-2xl mt-1 border border-indigo-500/30">
+        <i class="fa-solid fa-qrcode"></i>
+      </div>
+
+      <div class="text-center space-y-1">
+        <h3 class="font-black text-xl text-white">모바일 접속 QR 코드</h3>
+        <p class="text-xs text-rose-400 font-bold bg-rose-500/10 inline-block px-2 py-1 rounded">⚠️ 현재는 미리보기 상태라 폰으로 접속할 수 없습니다.</p>
+      </div>
+
+      <!-- QR Code Canvas -->
+      <div class="bg-white p-3 rounded-2xl shadow-inner mx-auto my-2" id="qrcodeCanvas"></div>
+
+      <!-- URL Input & Copy -->
+      <div class="w-full flex flex-col gap-2 relative z-10">
+        <label class="text-[11px] font-bold text-slate-400 text-left px-1">정식 배포된 웹사이트 주소를 입력하세요 (https://...)</label>
+        <div class="flex gap-2">
+          <input type="url" id="qrUrlInput" placeholder="https://..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-indigo-500 shadow-inner" />
+        </div>
+        <div class="flex gap-2 mt-1">
+          <button id="btnCopyLink" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-copy"></i><span>주소 복사</span>
+          </button>
+        </div>
+      </div>
+      
+      <p class="text-[11px] text-slate-400 mt-2">
+        <button id="btnOpenDeployModalQR" class="text-emerald-400 font-bold underline">이곳을 눌러 무료 웹사이트 만드는 법 보기</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- FREE WEB HOSTING / DEPLOY MODAL -->
+  <div id="deployModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-lg rounded-3xl p-5 sm:p-7 flex flex-col gap-4 border border-emerald-500/30 shadow-2xl relative">
+      <button id="btnCloseDeployModal" class="absolute top-4 right-4 text-slate-400 hover:text-white w-8 h-8 rounded-xl glass-btn flex items-center justify-center transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl border border-emerald-500/30 shrink-0">
+          <i class="fa-solid fa-rocket"></i>
+        </div>
+        <div>
+          <h3 class="font-black text-lg text-white">무료 웹사이트 라이브 출판 안내</h3>
+          <p class="text-xs text-slate-400 mt-0.5">이 게임을 인터넷에 무료로 올리는 2가지 방법</p>
+        </div>
+      </div>
+
+      <!-- STEP 1: NETLIFY DROP -->
+      <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-800 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-extrabold text-xs text-emerald-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-bolt"></i> 방법 1. 드래그 한 번으로 출시 (가장 쉬움)
+          </span>
+          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">추천 • 10초 소요</span>
+        </div>
+        <ol class="list-decimal list-inside text-xs text-slate-300 space-y-1.5 leading-relaxed pl-1">
+          <li>우측 상단 파일창의 <code class="text-amber-300 bg-slate-800 px-1.5 py-0.5 rounded font-bold">index.html</code> 코드를 내 컴퓨터에 저장합니다.</li>
+          <li><a href="https://app.netlify.com/drop" target="_blank" class="text-indigo-400 font-extrabold underline hover:text-indigo-300">Netlify Drop (app.netlify.com/drop)</a> 사이트에 접속합니다.</li>
+          <li>저장한 <code class="text-amber-300 bg-slate-800 px-1 rounded">index.html</code> 파일만 마우스로 끌어다 놓으면 정식 웹사이트 주소(<code class="text-emerald-300">https://...netlify.app</code>)가 발급됩니다!</li>
+        </ol>
+      </div>
+
+      <!-- STEP 2: GITHUB PAGES -->
+      <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-800 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-extrabold text-xs text-indigo-400 flex items-center gap-1.5">
+            <i class="fa-brands fa-github"></i> 방법 2. GitHub Pages 이용하기
+          </span>
+          <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-bold">영구 무료 호스팅</span>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          GitHub 저장소(Repository)를 만들고 <code class="text-amber-300 bg-slate-800 px-1 rounded">index.html</code>을 업로드한 뒤, <b>Settings ➔ Pages</b>에서 해당 브랜치를 지정하면 영구적인 내 전용 웹사이트가 생성됩니다.
+        </p>
+      </div>
+
+      <div class="text-center pt-1">
+        <p class="text-xs text-slate-400">발급받은 웹사이트 주소를 <b>[QR 공유]</b> 메뉴에 넣으면 스마트폰으로 바로 들어올 수 있습니다!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM ALERT TOAST (Replaces window.alert) -->
+  <div id="customToast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 hidden bg-slate-900/95 border border-indigo-500/60 text-white px-5 py-3 rounded-2xl shadow-2xl items-center gap-3 transition-all duration-300 backdrop-blur-md">
+    <i id="toastIcon" class="fa-solid fa-lightbulb text-amber-400 text-lg"></i>
+    <span id="toastMessage" class="text-xs sm:text-sm font-bold">알림 메시지</span>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="w-full bg-slate-950 border-t border-slate-900 py-3 text-center text-[11px] text-slate-500">
+    2026 World Cup Flag & Capital Map Conquest Game • All Rights Reserved
+  </footer>
+
+  <!-- GAME SCRIPT ENGINE -->
+  <script>
+    // 1. DATASET: 48 World Cup 2026 Nations
+    const NATIONS_48 = [
+      { id: 1, name: "대한민국", capital: "서울", code: "kr", continent: "아시아", x: 345, y: 160 },
+      { id: 2, name: "일본", capital: "도쿄", code: "jp", continent: "아시아", x: 375, y: 165 },
+      { id: 3, name: "호주", capital: "캔버라", code: "au", continent: "오세아니아", x: 410, y: 380 },
+      { id: 4, name: "이란", capital: "테헤란", code: "ir", continent: "아시아", x: 220, y: 175 },
+      { id: 5, name: "사우디아라비아", capital: "리야드", code: "sa", continent: "아시아", x: 190, y: 200 },
+      { id: 6, name: "카타르", capital: "도하", code: "qa", continent: "아시아", x: 205, y: 195 },
+      { id: 7, name: "우즈베키스탄", capital: "타슈켄트", code: "uz", continent: "아시아", x: 225, y: 140 },
+      { id: 8, name: "요르단", capital: "암만", code: "jo", continent: "아시아", x: 175, y: 180 },
+      { id: 9, name: "프랑스", capital: "파리", code: "fr", continent: "유럽", x: 105, y: 120 },
+      { id: 10, name: "잉글랜드", capital: "런던", code: "gb", continent: "유럽", x: 95, y: 105 },
+      { id: 11, name: "스페인", capital: "마드리드", code: "es", continent: "유럽", x: 85, y: 140 },
+      { id: 12, name: "독일", capital: "베를린", code: "de", continent: "유럽", x: 120, y: 110 },
+      { id: 13, name: "네덜란드", capital: "암스테르담", code: "nl", continent: "유럽", x: 110, y: 105 },
+      { id: 14, name: "벨기에", capital: "브뤼셀", code: "be", continent: "유럽", x: 105, y: 112 },
+      { id: 15, name: "이탈리아", capital: "로마", code: "it", continent: "유럽", x: 125, y: 135 },
+      { id: 16, name: "자메이카", capital: "킹스턴", code: "jm", continent: "북중미", x: 790, y: 220 },
+      { id: 17, name: "포르투갈", capital: "리스본", code: "pt", continent: "유럽", x: 75, y: 142 },
+      { id: 18, name: "크로아티아", capital: "자그레브", code: "hr", continent: "유럽", x: 135, y: 130 },
+      { id: 19, name: "스위스", capital: "베른", code: "ch", continent: "유럽", x: 115, y: 125 },
+      { id: 20, name: "덴마크", capital: "코펜하겐", code: "dk", continent: "유럽", x: 120, y: 95 },
+      { id: 21, name: "오스트리아", capital: "빈", code: "at", continent: "유럽", x: 130, y: 122 },
+      { id: 22, name: "스코틀랜드", capital: "에든버러", code: "gb", continent: "유럽", x: 90, y: 95 },
+      { id: 23, name: "미국", capital: "워싱턴 D.C.", code: "us", continent: "북중미", x: 740, y: 155 },
+      { id: 24, name: "멕시코", capital: "멕시코시티", code: "mx", continent: "북중미", x: 710, y: 200 },
+      { id: 25, name: "캐나다", capital: "오타와", code: "ca", continent: "북중미", x: 730, y: 100 },
+      { id: 26, name: "코스타리카", capital: "산호세", code: "cr", continent: "북중미", x: 740, y: 235 },
+      { id: 27, name: "파나마", capital: "파나마시티", code: "pa", continent: "북중미", x: 755, y: 245 },
+      { id: 28, name: "온두라스", capital: "테구시갈파", code: "hn", continent: "북중미", x: 730, y: 225 },
+      { id: 29, name: "브라질", capital: "브라질리아", code: "br", continent: "남미", x: 820, y: 340 },
+      { id: 30, name: "아르헨티나", capital: "부에노스아이레스", code: "ar", continent: "남미", x: 790, y: 410 },
+      { id: 31, name: "우루과이", capital: "몬테비데오", code: "uy", continent: "남미", x: 810, y: 415 },
+      { id: 32, name: "콜롬비아", capital: "보고타", code: "co", continent: "남미", x: 760, y: 265 },
+      { id: 33, name: "에콰도르", capital: "키토", code: "ec", continent: "남미", x: 745, y: 280 },
+      { id: 34, name: "페루", capital: "리마", code: "pe", continent: "남미", x: 755, y: 320 },
+      { id: 35, name: "칠레", capital: "산티아고", code: "cl", continent: "남미", x: 770, y: 410 },
+      { id: 36, name: "파라과이", capital: "아순시온", code: "py", continent: "남미", x: 800, y: 370 },
+      { id: 37, name: "모로코", capital: "라바트", code: "ma", continent: "아프리카", x: 75, y: 175 },
+      { id: 38, name: "세네갈", capital: "다카르", code: "sn", continent: "아프리카", x: 50, y: 220 },
+      { id: 39, name: "나이지리아", capital: "아부자", code: "ng", continent: "아프리카", x: 105, y: 240 },
+      { id: 40, name: "이집트", capital: "카이로", code: "eg", continent: "아프리카", x: 160, y: 185 },
+      { id: 41, name: "카메룬", capital: "야운데", code: "cm", continent: "아프리카", x: 115, y: 260 },
+      { id: 42, name: "알제리", capital: "알제", code: "dz", continent: "아프리카", x: 95, y: 170 },
+      { id: 43, name: "튀니지", capital: "튀니스", code: "tn", continent: "아프리카", x: 110, y: 160 },
+      { id: 44, name: "남아프리카 공화국", capital: "프리토리아", code: "za", continent: "아프리카", x: 145, y: 400 },
+      { id: 45, name: "코트디부아르", capital: "야무수크로", code: "ci", continent: "아프리카", x: 75, y: 245 },
+      { id: 46, name: "가나", capital: "아크라", code: "gh", continent: "아프리카", x: 88, y: 248 },
+      { id: 47, name: "말리", capital: "바마코", code: "ml", continent: "아프리카", x: 70, y: 210 },
+      { id: 48, name: "뉴질랜드", capital: "웰링턴", code: "nz", continent: "오세아니아", x: 480, y: 430 }
+    ];
+
+    // 2. STATE MANAGEMENT
+    const state = {
+      quizType: "flag", // "flag" | "capital"
+      playMode: "map",  // "map" | "4choice" | "text" | "speed"
+      useBlur: false,
+      conquered: new Set(),
+      score: 0,
+      lives: 3,
+      timerSec: 60,
+      timerInterval: null,
+      currentNation: null,
+      currentOptions: []
+    };
+
+    // 3. UI REFERENCES
+    const UI = {};
+
+    // Custom Toast Notification Engine
+    function showToast(message, iconClass = "fa-solid fa-circle-info text-indigo-400") {
+      const toast = document.getElementById('customToast');
+      const msgElem = document.getElementById('toastMessage');
+      const iconElem = document.getElementById('toastIcon');
+
+      if (!toast || !msgElem) return;
+
+      msgElem.textContent = message;
+      if (iconElem) iconElem.className = iconClass + " text-lg";
+
+      toast.classList.remove('hidden');
+      toast.classList.add('flex');
+
+      setTimeout(() => {
+        toast.classList.add('hidden');
+        toast.classList.remove('flex');
+      }, 3000);
+    }
+
+    function initUIReferences() {
+      UI.startPanel = document.getElementById('startPanel');
+      UI.mapViewContainer = document.getElementById('mapViewContainer');
+      UI.quizModal = document.getElementById('quizModal');
+      UI.qrModal = document.getElementById('qrModal');
+      UI.deployModal = document.getElementById('deployModal');
+      
+      UI.btnHeaderHome = document.getElementById('btnHeaderHome');
+      UI.btnOpenQRHeader = document.getElementById('btnOpenQRHeader');
+      UI.btnOpenQRMain = document.getElementById('btnOpenQRMain');
+      UI.btnCloseQRModal = document.getElementById('btnCloseQRModal');
+      UI.btnOpenDeployModal = document.getElementById('btnOpenDeployModal');
+      UI.btnCloseDeployModal = document.getElementById('btnCloseDeployModal');
+      UI.qrCodeContainer = document.getElementById('qrcodeCanvas');
+      UI.qrUrlInput = document.getElementById('qrUrlInput');
+      UI.btnCopyLink = document.getElementById('btnCopyLink');
+
+      UI.btnSelectTypeFlag = document.getElementById('btnSelectTypeFlag');
+      UI.btnSelectTypeCapital = document.getElementById('btnSelectTypeCapital');
+      UI.btnModeMap = document.getElementById('btnModeMap');
+      UI.btnMode4Choice = document.getElementById('btnMode4Choice');
+      UI.btnModeTextInput = document.getElementById('btnModeTextInput');
+      UI.btnModeSpeed = document.getElementById('btnModeSpeed');
+      UI.chkBlurEffect = document.getElementById('chkBlurEffect');
+      UI.btnStartGame = document.getElementById('btnStartGame');
+
+      UI.hudScoreGroup = document.getElementById('hudScoreGroup');
+      UI.hudScore = document.getElementById('hudScore');
+      UI.hudLives = document.getElementById('hudLives');
+      UI.hudTimerContainer = document.getElementById('hudTimerContainer');
+      UI.hudTimer = document.getElementById('hudTimer');
+      UI.mapConqueredCount = document.getElementById('mapConqueredCount');
+      UI.svgPinsGroup = document.getElementById('svgPinsGroup');
+
+      UI.modalContinentBadge = document.getElementById('modalContinentBadge');
+      UI.modalTitle = document.getElementById('modalTitle');
+      UI.btnCloseModal = document.getElementById('btnCloseModal');
+      UI.flagImage = document.getElementById('flagImage');
+      UI.questionText = document.getElementById('questionText');
+      UI.questionSubText = document.getElementById('questionSubText');
+      
+      UI.btnHint5050 = document.getElementById('btnHint5050');
+      UI.btnHintText = document.getElementById('btnHintText');
+      UI.optionsContainer = document.getElementById('optionsContainer');
+      UI.directInputContainer = document.getElementById('directInputContainer');
+      UI.directTextInput = document.getElementById('directTextInput');
+      UI.btnSubmitDirectInput = document.getElementById('btnSubmitDirectInput');
+      UI.feedbackContainer = document.getElementById('feedbackContainer');
+      UI.feedbackText = document.getElementById('feedbackText');
+      UI.btnNextQuestion = document.getElementById('btnNextQuestion');
+    }
+
+    // 4. MAP RENDERING ENGINE
+    function renderMapPins() {
+      if (!UI.svgPinsGroup) return;
+      UI.svgPinsGroup.innerHTML = '';
+
+      NATIONS_48.forEach(n => {
+        const isConquered = state.conquered.has(n.id);
+        const hitRadius = (n.id === 16) ? 20 : 12; // Extra large hit area for Jamaica
+
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("class", "cursor-pointer group");
+
+        // Clickable extended hitbox
+        const hitCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        hitCircle.setAttribute("cx", n.x);
+        hitCircle.setAttribute("cy", n.y);
+        hitCircle.setAttribute("r", hitRadius);
+        hitCircle.setAttribute("fill", "transparent");
+
+        // Visible Pin Circle
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", n.x);
+        circle.setAttribute("cy", n.y);
+        circle.setAttribute("r", "8.5");
+        circle.setAttribute("fill", isConquered ? "#10b981" : "#6366f1");
+        circle.setAttribute("stroke", "#ffffff");
+        circle.setAttribute("stroke-width", "1.5");
+        circle.setAttribute("class", isConquered ? "" : "pin-pulse");
+
+        // Number Label
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", n.x);
+        text.setAttribute("y", n.y + 3);
+        text.setAttribute("fill", "#ffffff");
+        text.setAttribute("font-size", "8");
+        text.setAttribute("font-weight", "900");
+        text.setAttribute("text-anchor", "middle");
+        text.textContent = n.id;
+
+        g.appendChild(hitCircle);
+        g.appendChild(circle);
+        g.appendChild(text);
+
+        g.addEventListener('click', () => {
+          openQuizForNation(n);
+        });
+
+        UI.svgPinsGroup.appendChild(g);
+      });
+
+      if (UI.mapConqueredCount) {
+        UI.mapConqueredCount.textContent = state.conquered.size;
+      }
+    }
+
+    // 5. QUIZ ENGINE
+    function openQuizForNation(nation) {
+      state.currentNation = nation;
+      UI.feedbackContainer.classList.add('hidden');
+      
+      UI.modalContinentBadge.textContent = nation.continent;
+      UI.modalTitle.textContent = `${nation.name} 정복 도전`;
+
+      // Official Flag CDN
+      UI.flagImage.src = `https://flagcdn.com/w320/${nation.code}.png`;
+
+      // Blur Toggle
+      if (state.useBlur) {
+        UI.flagImage.classList.remove('flag-clear');
+        UI.flagImage.classList.add('flag-blur');
+      } else {
+        UI.flagImage.classList.remove('flag-blur');
+        UI.flagImage.classList.add('flag-clear');
+      }
+
+      // Quiz Mode Questions
+      if (state.quizType === "flag") {
+        UI.questionText.textContent = "이 국기의 나라 이름은 무엇일까요?";
+        UI.questionSubText.textContent = `힌트 수도: ${nation.capital}`;
+      } else {
+        UI.questionText.textContent = `국가 [ ${nation.name} ]의 수도는 어디일까요?`;
+        UI.questionSubText.textContent = `대륙: ${nation.continent}`;
+      }
+
+      // Input Controls
+      if (state.playMode === "text") {
+        UI.optionsContainer.classList.add('hidden');
+        UI.directInputContainer.classList.remove('hidden');
+        UI.directTextInput.value = '';
+        setTimeout(() => UI.directTextInput.focus(), 100);
+      } else {
+        UI.directInputContainer.classList.add('hidden');
+        UI.optionsContainer.classList.remove('hidden');
+        generate4Options(nation);
+      }
+
+      UI.quizModal.classList.remove('hidden');
+    }
+
+    function generate4Options(correctNation) {
+      const wrongPool = NATIONS_48.filter(n => n.id !== correctNation.id);
+      const shuffledWrong = [...wrongPool].sort(() => 0.5 - Math.random()).slice(0, 3);
+      
+      const options = [...shuffledWrong, correctNation].sort(() => 0.5 - Math.random());
+      state.currentOptions = options;
+
+      const buttons = UI.optionsContainer.querySelectorAll('button');
+      buttons.forEach((btn, idx) => {
+        btn.disabled = false;
+        btn.classList.remove('bg-emerald-600', 'bg-rose-600', 'opacity-30');
+        btn.classList.add('glass-btn');
+
+        const optNation = options[idx];
+        const label = state.quizType === "flag" ? optNation.name : optNation.capital;
+        btn.textContent = `${idx + 1}. ${label}`;
+
+        btn.onclick = () => handleAnswer(optNation, btn);
+      });
+    }
+
+    function handleAnswer(selectedNation, btnElement) {
+      const isCorrect = selectedNation.id === state.currentNation.id;
+
+      // Reveal Flag
+      UI.flagImage.classList.remove('flag-blur');
+      UI.flagImage.classList.add('flag-clear');
+
+      if (isCorrect) {
+        state.score += 10;
+        state.conquered.add(state.currentNation.id);
+        if (btnElement) btnElement.classList.add('bg-emerald-600');
+        UI.feedbackText.textContent = "정답입니다! 🎉 영토를 성공적으로 점령했습니다!";
+        UI.feedbackText.className = "font-extrabold text-xs sm:text-sm text-emerald-400";
+      } else {
+        state.lives -= 1;
+        if (btnElement) btnElement.classList.add('bg-rose-600');
+        const correctLabel = state.quizType === "flag" ? state.currentNation.name : state.currentNation.capital;
+        UI.feedbackText.textContent = `틀렸습니다! 정답은 [ ${correctLabel} ] 입니다.`;
+        UI.feedbackText.className = "font-extrabold text-xs sm:text-sm text-rose-400";
+      }
+
+      updateHUD();
+      renderMapPins();
+
+      // Disable Buttons After Choice
+      const buttons = UI.optionsContainer.querySelectorAll('button');
+      buttons.forEach(b => b.disabled = true);
+
+      UI.feedbackContainer.classList.remove('hidden');
+
+      if (state.lives <= 0) {
+        setTimeout(() => {
+          showToast(`게임 오버! 최종 정복 점수: ${state.score}점`, "fa-solid fa-skull text-rose-500");
+          resetToHome();
+        }, 800);
+      }
+    }
+
+    function submitDirectInput() {
+      const val = UI.directTextInput.value.trim();
+      if (!val) return;
+
+      const target = state.quizType === "flag" ? state.currentNation.name : state.currentNation.capital;
+      const isCorrect = val.replaceAll(" ", "") === target.replaceAll(" ", "");
+
+      handleAnswer(isCorrect ? state.currentNation : { id: -1 }, null);
+    }
+
+    function updateHUD() {
+      if (UI.hudScore) UI.hudScore.textContent = state.score;
+      if (UI.hudLives) {
+        UI.hudLives.textContent = state.lives > 0 ? "❤️".repeat(state.lives) : "💀";
+      }
+      if (UI.hudTimer) UI.hudTimer.textContent = state.timerSec;
+    }
+
+    function startSpeedTimer() {
+      clearInterval(state.timerInterval);
+      state.timerSec = 60;
+      UI.hudTimerContainer.classList.remove('hidden');
+      updateHUD();
+
+      state.timerInterval = setInterval(() => {
+        state.timerSec -= 1;
+        updateHUD();
+        if (state.timerSec <= 0) {
+          clearInterval(state.timerInterval);
+          showToast(`⏱️ 제한시간 종료! 최종 스피드 점수: ${state.score}점`, "fa-solid fa-trophy text-amber-400");
+          resetToHome();
+        }
+      }, 1000);
+    }
+
+    function pickRandomQuestion() {
+      const randomNation = NATIONS_48[Math.floor(Math.random() * NATIONS_48.length)];
+      openQuizForNation(randomNation);
+    }
+
+    function resetToHome() {
+      clearInterval(state.timerInterval);
+      UI.quizModal.classList.add('hidden');
+      UI.mapViewContainer.classList.add('hidden');
+      UI.startPanel.classList.remove('hidden');
+      UI.hudScoreGroup.classList.add('hidden');
+    }
+
+    // 6. QR CODE GENERATOR ENGINE
+    function generateQRCode(urlText) {
+      if (!UI.qrCodeContainer) return;
+      UI.qrCodeContainer.innerHTML = '';
+      
+      let targetUrl = (urlText || '').trim();
+
+      // Clean default URL if in blob/sandbox mode
+      if (!targetUrl || targetUrl.startsWith('blob:')) {
+        targetUrl = 'https://';
+      } else if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+        targetUrl = 'https://' + targetUrl;
+      }
+
+      try {
+        new QRCode(UI.qrCodeContainer, {
+          text: targetUrl,
+          width: 140,
+          height: 140,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (err) {
+        console.error("QR Code Generation Error:", err);
+      }
+    }
+
+    function openQRModal() {
+      if (UI.qrUrlInput) {
+        UI.qrUrlInput.value = ''; // 항상 빈칸으로 시작
+      }
+      generateQRCode('https://example.com/deploy-first'); // 기본 더미 QR
+      UI.qrModal.classList.remove('hidden');
+    }
+
+    // 7. EVENT LISTENERS
+    function setupEvents() {
+      // Toggle Quiz Type
+      UI.btnSelectTypeFlag.onclick = () => {
+        state.quizType = "flag";
+        UI.btnSelectTypeFlag.className = "flex-1 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md";
+        UI.btnSelectTypeCapital.className = "flex-1 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 text-slate-400 hover:text-white";
+      };
+
+      UI.btnSelectTypeCapital.onclick = () => {
+        state.quizType = "capital";
+        UI.btnSelectTypeCapital.className = "flex-1 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md";
+        UI.btnSelectTypeFlag.className = "flex-1 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 text-slate-400 hover:text-white";
+      };
+
+      // Toggle Game Mode
+      const modes = [
+        { btn: UI.btnModeMap, id: "map" },
+        { btn: UI.btnMode4Choice, id: "4choice" },
+        { btn: UI.btnModeTextInput, id: "text" },
+        { btn: UI.btnModeSpeed, id: "speed" }
+      ];
+
+      modes.forEach(m => {
+        m.btn.onclick = () => {
+          state.playMode = m.id;
+          modes.forEach(x => {
+            x.btn.classList.remove('border-indigo-500/50', 'bg-indigo-950/40');
+            x.btn.classList.add('border-slate-800');
+          });
+          m.btn.classList.remove('border-slate-800');
+          m.btn.classList.add('border-indigo-500/50', 'bg-indigo-950/40');
+        };
+      });
+
+      // Start Game
+      UI.btnStartGame.onclick = () => {
+        state.score = 0;
+        state.lives = 3;
+        state.conquered.clear();
+        state.useBlur = UI.chkBlurEffect.checked;
+        updateHUD();
+
+        UI.startPanel.classList.add('hidden');
+        UI.hudScoreGroup.classList.remove('hidden');
+
+        if (state.playMode === "map") {
+          UI.mapViewContainer.classList.remove('hidden');
+          UI.hudTimerContainer.classList.add('hidden');
+          renderMapPins();
+        } else if (state.playMode === "speed") {
+          UI.mapViewContainer.classList.add('hidden');
+          startSpeedTimer();
+          pickRandomQuestion();
+        } else {
+          UI.mapViewContainer.classList.add('hidden');
+          UI.hudTimerContainer.classList.add('hidden');
+          pickRandomQuestion();
+        }
+      };
+
+      // Next Question
+      UI.btnNextQuestion.onclick = () => {
+        if (state.playMode === "map") {
+          UI.quizModal.classList.add('hidden');
+        } else {
+          pickRandomQuestion();
+        }
+      };
+
+      // Direct Input
+      UI.btnSubmitDirectInput.onclick = submitDirectInput;
+      UI.directTextInput.onkeyup = (e) => {
+        if (e.key === 'Enter') submitDirectInput();
+      };
+
+      // Hints
+      UI.btnHint5050.onclick = () => {
+        if (state.playMode === "text") return;
+        const buttons = Array.from(UI.optionsContainer.querySelectorAll('button'));
+        let removed = 0;
+        buttons.forEach((btn, idx) => {
+          if (state.currentOptions[idx].id !== state.currentNation.id && removed < 2) {
+            btn.disabled = true;
+            btn.classList.add('opacity-25');
+            removed++;
+          }
+        });
+      };
+
+      UI.btnHintText.onclick = () => {
+        const hintText = state.quizType === "flag" 
+          ? `수도: ${state.currentNation.capital}` 
+          : `국가: ${state.currentNation.name} (${state.currentNation.continent})`;
+        showToast(`💡 힌트: ${hintText}`, "fa-solid fa-lightbulb text-amber-300");
+      };
+
+      // Navigation & Modals
+      UI.btnHeaderHome.onclick = resetToHome;
+      UI.btnCloseModal.onclick = () => UI.quizModal.classList.add('hidden');
+      UI.btnOpenQRHeader.onclick = openQRModal;
+      UI.btnOpenQRMain.onclick = openQRModal;
+      UI.btnCloseQRModal.onclick = () => UI.qrModal.classList.add('hidden');
+      
+      const btnOpenDeployModalQR = document.getElementById('btnOpenDeployModalQR');
+      if (btnOpenDeployModalQR) {
+        btnOpenDeployModalQR.onclick = () => {
+          UI.qrModal.classList.add('hidden');
+          UI.deployModal.classList.remove('hidden');
+        };
+      }
+
+      if (UI.btnOpenDeployModal && UI.deployModal) {
+        UI.btnOpenDeployModal.onclick = () => UI.deployModal.classList.remove('hidden');
+      }
+      if (UI.btnCloseDeployModal && UI.deployModal) {
+        UI.btnCloseDeployModal.onclick = () => UI.deployModal.classList.add('hidden');
+      }
+
+      if (UI.qrUrlInput) {
+        UI.qrUrlInput.oninput = (e) => generateQRCode(e.target.value.trim());
+      }
+
+      // Address Copy Button Handler
+      if (UI.btnCopyLink) {
+        UI.btnCopyLink.onclick = async () => {
+          const inputElem = UI.qrUrlInput;
+          let textToCopy = (inputElem && inputElem.value.trim()) ? inputElem.value.trim() : window.location.href;
+
+          if (textToCopy.startsWith('blob:')) {
+            textToCopy = 'https://';
+          }
+
+          if (inputElem) {
+            inputElem.focus();
+            inputElem.select();
+            if (inputElem.setSelectionRange) {
+              inputElem.setSelectionRange(0, 99999);
+            }
+          }
+
+          let success = false;
+
+          try {
+            if (navigator.clipboard && window.isSecureContext) {
+              await navigator.clipboard.writeText(textToCopy);
+              success = true;
+            }
+          } catch (e) {
+            success = false;
+          }
+
+          if (!success) {
+            try {
+              const ta = document.createElement('textarea');
+              ta.value = textToCopy;
+              ta.style.position = 'fixed';
+              ta.style.left = '-9999px';
+              document.body.appendChild(ta);
+              ta.focus();
+              ta.select();
+              success = document.execCommand('copy');
+              document.body.removeChild(ta);
+            } catch (e) {
+              success = false;
+            }
+          }
+
+          if (success) {
+            UI.btnCopyLink.innerHTML = '<i class="fa-solid fa-check text-emerald-300"></i><span>복사 완료!</span>';
+            UI.btnCopyLink.className = "flex-1 bg-emerald-600 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center gap-1.5";
+          } else {
+            window.prompt("아래 주소를 복사(Ctrl+C)하세요:", textToCopy);
+            UI.btnCopyLink.innerHTML = '<i class="fa-solid fa-check text-indigo-300"></i><span>주소 선택됨</span>';
+          }
+
+          setTimeout(() => {
+            UI.btnCopyLink.innerHTML = '<i class="fa-solid fa-copy"></i><span>주소 복사</span>';
+            UI.btnCopyLink.className = "flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition flex items-center justify-center gap-1.5";
+          }, 2000);
+        };
+      }
+    }
+
+    // INITIALIZE ENGINE ON LOAD
+    window.onload = function() {
+      initUIReferences();
+      setupEvents();
+    };
+  </script>
+</body>
+</html>
